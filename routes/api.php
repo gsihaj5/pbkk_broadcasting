@@ -1,6 +1,7 @@
 <?php
 
 use App\Events\MessageSent;
+use App\Events\MessageSentRoom;
 use App\Events\MessageBroadcasted;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -21,21 +22,31 @@ Route::middleware("auth:api")->get("/user", function (Request $request) {
 });
 
 Route::post("/message", function (Request $request) {
-    if ($request->input("scope") == "private") {
-        return event(
-            new MessageSent(
-                $request->input("message"),
-                $request->input("name_from"),
-                (new DateTime())->getTimestamp()
-            )
-        );
+    switch ($request->input("scope")) {
+        case "private":
+            return event(
+                new MessageSent(
+                    $request->input("message"),
+                    $request->input("name_from"),
+                    (new DateTime())->getTimestamp()
+                )
+            );
+        case "public":
+            return event(
+                new MessageBroadcasted(
+                    $request->input("message"),
+                    $request->input("name_from"),
+                    (new DateTime())->getTimestamp()
+                )
+            );
+        case "presence":
+        default:
+            return event(
+                new MessageSentRoom(
+                    $request->input("message"),
+                    $request->input("name_from"),
+                    (new DateTime())->getTimestamp()
+                )
+            );
     }
-
-    return event(
-        new MessageBroadcasted(
-            $request->input("message"),
-            $request->input("name_from"),
-            (new DateTime())->getTimestamp()
-        )
-    );
 });
